@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "log4js": "^6.8.0",
     "mongoose": "^6.10.0"
   },
   "scripts": {

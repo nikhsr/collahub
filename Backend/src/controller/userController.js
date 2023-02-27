@@ -11,31 +11,31 @@ const logger = log4js.getLogger();
 //const twilio = require('twilio')(config.twilioSid, config.twilioAuthToken);
 //const MessagingResponse = require('twilio').twiml.MessagingResponse;
 
-//mongoose.connect(config.mongodburl);
+
+mongoose.connect('mongodb://localhost:27017/usersdb',
+  {
+    useNewUrlParser: true,
+    useFindAndModify: false,
+    useUnifiedTopology: true
+  }
+);
+
 var Schema = mongoose.Schema;
 
 var userDataSchema = new Schema({
 	name: String,
-	macaddress: String,
-	subcontractorid: String,
-	sticker: {
+	email: String,
+    password: String,
+	level: {
 		type: Number,
 		required: true
 	},
 	created: Date,
-	startdate: Date,
-	project: {
-		type: String,
-		required: true
-	},
 	status: String,
 	lock: Boolean, 
-	photo: String,
+	avatar: String,
 	language: String,
-	meta: {
-		type: Map,
-		of: String
-	}
+	projects: [String]
 }, {
 	collection: 'Users',
 	timestamps: true
@@ -56,154 +56,76 @@ var notificationDataSchema = new Schema({
 	timestamps: true
 });
 
-// var WorkerData = mongoose.model('Worker', workerDataSchema);
-// var NotificationData = mongoose.model('Notification', notificationDataSchema);
+ var UserData = mongoose.model('User', userDataSchema);
+ var NotificationData = mongoose.model('Notification', notificationDataSchema);
 
-// exports.getWorkers = (req, res, next) => {
-// 	WorkerData.find()
-// 		.then(function (response) {
-// 			//console.log(response);
-// 			res.status(200).json({
-// 				data: response
-// 			});
-// 		});
-// };
+exports.getUser = (req, res, next) => {
+	UserData.find()
+		.then(function (response) {
+			//console.log(response);
+			res.status(200).json({
+				data: response
+			});
+		});
+};
 
-// exports.createWorker = (req, res, next) => {
-// 	var item = (({
-// 		name,
-// 		subcontractorid,
-// 		sticker,
-// 		project,
-// 		status,
-// 		macaddress,
-// 		meta
-// 	}) => ({
-// 		name,
-// 		subcontractorid,
-// 		sticker,
-// 		project,
-// 		status,
-// 		macaddress,
-// 		meta
-// 	}))(req.body);
+exports.createUser = (req, res, next) => {
+	var item = (({
+		name,
+        email,
+        password,
+        avatar,
+        projects
+	}) => ({
+		name,
+        email,
+        password,
+        avatar,
+        projects
+	}))(req.body);
 	
-// 	item.lock = false;
-// 	var workerToSave = new WorkerData(item);
-// 	workerToSave.save();
+	item.lock = false;
+    item.level = 0;
+	var userToSave = new UserData(item);
+	userToSave.save();
 
-// 	logger.info('Worker created  - '+JSON.stringify(workerToSave));
-// 	res.status(200).json({
-// 		data: workerToSave
-// 	});
-// };
+	logger.info('Worker created  - '+JSON.stringify(userToSave));
+	res.status(200).json({
+		data: workerToSave
+	});
+};
 
-// exports.updateWorker = (req, res, next) => {
-// 	var item = (({
-// 		_id,
-// 		name,
-// 		subcontractorid,
-// 		sticker,
-// 		project,
-// 		status,
-// 		lock,
-// 		photo,
-// 		signature,
-// 		macaddress,
-// 		meta
-// 	}) => ({
-// 		_id,
-// 		name,
-// 		subcontractorid,
-// 		sticker,
-// 		project,
-// 		status,
-// 		lock,
-// 		photo,
-// 		signature,
-// 		macaddress,
-// 		meta
-// 	}))(req.body);
+exports.updateUser = (req, res, next) => {
+	var item = (({
+		_id,
+		name,
+        email,
+        password,
+        avatar,
+        projects
+	}) => ({
+		_id,
+		name,
+        email,
+        password,
+        avatar,
+        projects
+	}))(req.body);
 
-// 	WorkerData.findById(item._id, function (err, workerToSave) {
-// 		const meta = JSON.parse(JSON.stringify(item.meta));
-// 		Object.assign(workerToSave, item);
-// 		axios.post(config.kloudspotbaseurl + '/api/public/v1/auth/login', {
-// 			'id': config.kloudspotid,
-// 			'secretKey': config.kloudspotsecret
-// 		}).then(function (jwtresp) {
-// 			logger.debug('JWT Token -> ' + jwtresp.data);
-// 			const jwttoken = jwtresp.data;
+	UserData.findById(item._id, function (err, userToSave) {
+		userToSave.save();
+		logger.info('Worker updated  - '+JSON.stringify(userToSave));
+		res.status(200).json({
+			data: clientresp.data
+		});
+});
+}
 
-// 			const payload = {
-// 				"sticker": item.sticker,
-// 				"phone": meta.phone,
-// 				"subcontractor": item.subcontractorid,
-// 				"name": item.name,
-// 				"mac": item.macaddress
-// 			};
-// 			logger.debug('Sending Worker Edit request to Epsilon');
-// 			axios.post(config.kloudspotbaseurl + '/api/public/v1/client/updateworker', payload, {
-// 				headers: {
-// 					Authorization: "Bearer " + jwttoken
-// 				}
-// 			}).then(function (clientresp) {
-// 				if (clientresp.data.data==null || clientresp.data.error) {
-// 					res.status(400).json({
-// 						data: clientresp.data
-// 					})
-// 					return;
-// 				}
-// 				workerToSave.save();
-// 				logger.info('Worker updated  - '+JSON.stringify(workerToSave));
-// 				res.status(200).json({
-// 					data: clientresp.data
-// 				});
-// 			});
-// 	});
-// });
-// }
-
-// exports.deleteWorker = (req, res, next) => {
-// 	var id = req.params.id;
-// 	WorkerData.findById(id, function (err, worker) {
-
-// 		axios.post(config.kloudspotbaseurl + '/api/public/v1/auth/login', {
-// 			'id': config.kloudspotid,
-// 			'secretKey': config.kloudspotsecret
-// 		}).then(function (jwtresp) {
-// 			logger.debug('JWT Token -> ' + jwtresp.data);
-// 			const jwttoken = jwtresp.data;
-
-// 			const payload = {
-// 				"mac": worker.macaddress,
-// 				"deactivate": "true"
-// 			};
-// 			logger.debug('Sending Worker Deactivate request to Epsilon');
-// 			axios.post(config.kloudspotbaseurl + '/api/public/v1/client/updateworker', payload, {
-// 				headers: {
-// 					Authorization: "Bearer " + jwttoken
-// 				}
-// 			}).then(function (clientresp) {
-// 				if (clientresp.data.data==null || clientresp.data.error) {
-// 					res.status(400).json({
-// 						data: clientresp.data
-// 					})
-// 					return;
-// 				}
-// 				WorkerData.findByIdAndRemove(id).exec();
-// 				logger.info('Worker '+worker.name+' deactivated from Epsilon and deleted from Database');
-// 				res.status(200).json({
-// 					data: clientresp.data,
-// 					error: false
-// 				});
-// 				return;
-// 				})
-// 				.catch((e)=>{
-// 					res.status(400).json({
-// 						error: true
-// 					});
-// 				});
-// 			});
-// 		});
-// 	}
+exports.deleteWorker = (req, res, next) => {
+	var id = req.params.id;
+    WorkerData.findByIdAndRemove(id).exec();
+    res.status(200).json({
+        data: "removed successfuly",
+        error: false
+    });
+}
