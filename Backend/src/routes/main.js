@@ -18,3 +18,5 @@ router.post('/user', function (req, res, next) {
 router.delete('/user/:id', userController.deleteUser);
 
 router.get('/users', userController.getUser);
+
+module.exports = router;

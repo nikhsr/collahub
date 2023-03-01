@@ -15,7 +15,6 @@ const logger = log4js.getLogger();
 mongoose.connect('mongodb://localhost:27017/usersdb',
   {
     useNewUrlParser: true,
-    useFindAndModify: false,
     useUnifiedTopology: true
   }
 );
@@ -121,7 +120,7 @@ exports.updateUser = (req, res, next) => {
 });
 }
 
-exports.deleteWorker = (req, res, next) => {
+exports.deleteUser = (req, res, next) => {
 	var id = req.params.id;
     WorkerData.findByIdAndRemove(id).exec();
     res.status(200).json({
