@@ -40,6 +40,8 @@ var userDataSchema = new Schema({
 	timestamps: true
 });
 
+//workspace schema
+
 var notificationDataSchema = new Schema({
 	name: String,
 	sid: String,

@@ -9,6 +9,7 @@ const bodyParser = require("body-parser");
 const { urlencoded } = require('body-parser');
 const prodMode = false;
 const cookieSession = require('cookie-session');
+var session = require('express-session');
 mongoose.connect('mongodb://localhost:27017/usersdb',
   {
     useNewUrlParser: true,
@@ -36,8 +37,8 @@ app.use(cookieSession({
 	maxAge: 24 * 60 * 60 * 1000 // 24 hours 
 }));
 
-app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.initialize());
+// app.use(passport.session());
 app.use((req, res, next) => {
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	res.setHeader(
@@ -48,54 +49,53 @@ app.use((req, res, next) => {
 	next();
 });
 
-const authMiddleware = (req, res, next) => {
-	if (prodMode && !req.isAuthenticated()) {
-		res.status(401).send('You are not authenticated')
-	} else {
-		return next();
-	}
-}
+function isAuthenticated(req, res, next) {
+  if (!req.session.isAuthenticated) {
+      return res.redirect('/auth/signin'); // redirect to sign-in route
+  }
 
+  next();
+};
 
-passport.use(new LocalStrategy({
-  usernameField: 'email',
-  passwordField: 'password'
-},
-async (email, password, done) => {
-  //console.log('Login attempt by ' + email);
+// passport.use(new LocalStrategy({
+//   usernameField: 'email',
+//   passwordField: 'password'
+// },
+// async (email, password, done) => {
+//   //console.log('Login attempt by ' + email);
 
-  const u = {
-    'email': email,
-    'password': password
-  };
-  await userController.validateUser(u).then(function (user) {
-    //Resolve
-    done(null, user);
-  }, function () {
-    //Reject
-    done(null, false, {
-      message: 'Incorrect username or password'
-    });
-  });
-}
-));
+//   const u = {
+//     'email': email,
+//     'password': password
+//   };
+//   await userController.validateUser(u).then(function (user) {
+//     //Resolve
+//     done(null, user);
+//   }, function () {
+//     //Reject
+//     done(null, false, {
+//       message: 'Incorrect username or password'
+//     });
+//   });
+// }
+// ));
 
-passport.serializeUser((user, done) => {
-//console.log('Serializing user..');
-done(null, user.email);
-});
+// passport.serializeUser((user, done) => {
+// //console.log('Serializing user..');
+// done(null, user.email);
+// });
 
-passport.deserializeUser(async (email, done) => {
-//console.log('Deserializing user from ' + email);
-await userController.getUserByEmail({
-  'email': email
-}).then(function (user) {
-  done(null, user);
-});
-});
+// passport.deserializeUser(async (email, done) => {
+// //console.log('Deserializing user from ' + email);
+// await userController.getUserByEmail({
+//   'email': email
+// }).then(function (user) {
+//   done(null, user);
+// });
+// });
 
 //serve out the api
-app.use("/api/", authMiddleware, routes);
+app.use("/api/", isAuthenticated, routes);
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
